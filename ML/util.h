@@ -10,10 +10,11 @@ using std::vector;
 using std::cout;
 using std::endl;
 using std::ostream;
+using std::function;
 typedef vector<double> Layer;
 typedef Layer Data;
 
-#define SHOW(x) do { cout << (#x) << ": " << x << endl } while(0);
+#define SHOW(x) do { cout << (#x) << ": " << x << endl; } while(0);
 
 template<class T>
 std::ostream& operator<<(std::ostream& out, const vector<T>& v) {

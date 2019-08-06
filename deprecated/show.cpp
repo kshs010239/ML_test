@@ -308,12 +308,12 @@ struct Model {
     double Er(Image& img, uint8_t label) {
         _predict(img);
         
-        /*
+        
         cout << "(" << (int)label << ") ";
         for(int i = 0; i < 10; i++)
             cout << i << ": " << out2[i] << "\t";
         cout << endl;
-        /**/
+        
 
         double ret = 0;
         for(int i = 0; i < 10; i++) {
@@ -407,7 +407,7 @@ int main(int argc, char* argv[]) {
         cout << "-------------------------------\n";
 		cout << "(" << t << ") ";
 		showtime();
-        for(int i = 1000; i < numberOfImages; i++) {
+        for(int i = 1000; i < 2000; i++) {
         //for(int i = 1000; i < 2000; i++) {
             model.train(imgs[i], labels[i]);
         }
@@ -419,7 +419,6 @@ int main(int argc, char* argv[]) {
         }
         cout << "Avg Error: " << avg_err << endl;
         cout << "TP: " << TP << endl;
-        model.lc1.show();
 
     }
     cout << "train finish" << endl;

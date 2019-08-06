@@ -41,11 +41,11 @@ public:
 		for(int i = 0; i < L2.size(); i++)
 		for(int j = 0; j < L1.size(); j++)
 			W[i][j] -= alp * L2[i] * Fn::dfdw(W[i], L1, j);
-
+        Layer L1t = L1;
         fill(L1.begin(), L1.end(), 0);
 		for(int i = 0; i < L2.size(); i++)
 		for(int j = 0; j < L1.size(); j++)
-			L1[j] += L2[i] * Fn::dfdx(W[i], L1, j);
+			L1[j] += L2[i] * Fn::dfdx(W[i], L1t, j);
 	}
 };
 
@@ -93,7 +93,7 @@ public:
 	}
 	virtual void Backward(Layer& L2, Layer& L1) {
 		for(int i = 0; i < L1.size(); i++)
-			L1[i] = Fn::dfdx(L2[i]);
+			L1[i] = Fn::dfdx(L1[i]) * L2[i];
 	}
 };
 

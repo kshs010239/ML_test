@@ -76,17 +76,33 @@ int main(int argc, char *argv[]) {
     vector<Label> train_labels = ReadLabel(train_label_file);
     vector<Data> test_images = ReadImage(test_image_file);
     vector<Label> test_labels = ReadLabel(test_label_file);
+    int train_size = train_images.size();
 
 
-	Model<Label, MyErrCal> model;
-    std::function<double()> randomInit = std::bind(Random::Random, 0.01, -0.01);
-    model.AddLayer(new FullConnect<Linear>(784, 100, randomInit));
+
+	Model<Label> model;
+    std::function<double()> randomInit  = std::bind(Random::Random, 0.01, -0.01);
+    std::function<double()> randomInit2 = std::bind(Random::Random, 0.1, -0.1);
+    model.AddLayer(new FullConnect<Linear>(784, 100, randomInit, 0.00004));
     model.AddLayer(new Activation<Sigmoid>(100));
-    model.AddLayer(new FullConnect<Linear>(100, 10, randomInit));
+    model.AddLayer(new FullConnect<Linear>(100, 10, randomInit2, 0.00001));
     model.AddLayer(new Activation<Sigmoid>(10));
 
-    vector<int> v{1, 2, 3};
-    cout << model.PredictResult(train_images[0]) << endl;
+
+    for(int t = 0; ; t++) {
+        double total_err = 0;
+        for(int i = 0; i < 10; i++) {
+            total_err += Loss(model, train_images[i], train_labels[i]);
+            //cout << "(" << (int)train_labels[i] << "): " 
+            //     << model.PredictResult(train_images[i]) << endl;
+        }
+        cout << "avg err: " << total_err / 10 << endl;
+        cout << "------------------------------\n";
+        for(int i = 0; i < 1000; i++) {
+            int idx = Random::Randint(train_size);
+            model.Train(train_images[idx], train_labels[idx]);
+        }
+    }
 
 	return 0;
 }
