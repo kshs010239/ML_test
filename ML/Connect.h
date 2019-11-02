@@ -17,7 +17,7 @@ public:
 	int inSize() const { return in_size; }
 	int outSize() const { return out_size; }
 	virtual void Forward (Layer& L1, Layer& L2) = 0;
-	virtual void Backward(Layer& L2, Layer& L1) = 0;
+	virtual void Backward(Layer& DL2, Layer& DL1, const Layer& L1) = 0;
 };
 
 // y = f(W, X), dy/dwi = df(W, X, i)
@@ -37,18 +37,20 @@ public:
 		for(int i = 0; i < L2.size(); i++)
 			L2[i] = Fn::f(W[i], L1);
 	}
-	virtual void Backward(Layer& L2, Layer& L1) {
-		for(int i = 0; i < L2.size(); i++)
-		for(int j = 0; j < L1.size(); j++)
-			W[i][j] -= alp * L2[i] * Fn::dfdw(W[i], L1, j);
-        Layer L1t = L1;
-        fill(L1.begin(), L1.end(), 0);
-		for(int i = 0; i < L2.size(); i++)
-		for(int j = 0; j < L1.size(); j++)
-			L1[j] += L2[i] * Fn::dfdx(W[i], L1t, j);
+	virtual void Backward(Layer& DL2, Layer& DL1, const Layer& L1) {
+		for(int i = 0; i < DL2.size(); i++)
+            Fn::set_dfdw_to_W(W[i], L1, alp, DL2[i]);
+		//for(int j = 0; j < L1.size(); j++)
+		//	W[i][j] -= alp * L2[i] * Fn::dfdw(W[i], L1, j);
+        fill(DL1.begin(), DL1.end(), 0);
+		for(int i = 0; i < DL2.size(); i++)
+            Fn::set_dfdx_to_L1(W[i], DL1, L1, DL2[i]);
+		//for(int j = 0; j < L1.size(); j++)
+		//	L1[j] += L2[i] * Fn::dfdx(W[i], L1t, j);
 	}
 };
 
+/*
 template<class Fn>
 class NotFullConnect : public BaseConnect {
 	struct Node {
@@ -79,7 +81,7 @@ public:
 
 	}
 };
-
+*/
 template<class Fn>
 class Activation : public BaseConnect {
 public:
@@ -91,9 +93,9 @@ public:
 		for(int i = 0; i < L1.size(); i++)
 			L2[i] = Fn::f(L1[i]);
 	}
-	virtual void Backward(Layer& L2, Layer& L1) {
-		for(int i = 0; i < L1.size(); i++)
-			L1[i] = Fn::dfdx(L1[i]) * L2[i];
+	virtual void Backward(Layer& DL2, Layer& DL1, const Layer& L1) {
+		for(int i = 0; i < DL1.size(); i++)
+			DL1[i] = Fn::dfdx(L1[i]) * DL2[i];
 	}
 };
 

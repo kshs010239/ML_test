@@ -15,10 +15,10 @@ template<class Label>
 void MyErrCal(const Label& label, Layer& L, Layer& D) {
     for(int i = 0; i < L.size(); i++) {
         if(i == label) {
-            L[i] = (L[i] - 1);
+            D[i] = 3 * (L[i] - 1);
         }
         else
-            L[i] = L[i];
+            D[i] = L[i];
     }
 }
 
@@ -34,10 +34,13 @@ public:
         {}
 	void AddLayer(BaseConnect* c) {
 		assert(layers.empty() or layers.back().size() == c->inSize());
-        if(layers.empty())
+        if(layers.empty()) {
             layers.push_back(Layer(c->inSize()));
+		    dlayers.push_back(Layer(c->outSize()));
+        }
 
 		layers.push_back(Layer(c->outSize()));
+		dlayers.push_back(Layer(c->outSize()));
 		connects.push_back(c);
 	}
     template<class Data>
@@ -50,12 +53,15 @@ public:
 	}
 	void Backward() {
 		for(int i = connects.size() - 1; i >= 0; i--) {
-			connects[i]->Backward(layers[i + 1], layers[i]);
+			connects[i]->Backward(dlayers[i + 1], dlayers[i], layers[i]);
 		}
 	}
 	void Train(const Data& data, const Label& label) {
+        SHOW("Forward");
 		Forward (data);
-		ErrCal	(label, layers.back(), layers.back());
+        SHOW("ErrCal");
+		ErrCal	(label, layers.back(), dlayers.back());
+        SHOW("Backward");
 		Backward();
 	}
 	const Layer& getResult() const {
@@ -66,12 +72,14 @@ public:
 		const Layer& res = getResult();
         return res;
     }
-	Label Predict(const Data& data) const {
-		const Layer& res = PredictResult(data);
+	Label _Predict(const Layer& res) const {
 		auto it = std::max_element(res.begin(), res.end());
 		return it - res.begin();
 	}
-
+	Label Predict(const Data& data) const {
+		const Layer& res = PredictResult(data);
+		return _Predict(res);
+	}
 };
 
 
@@ -80,10 +88,22 @@ double Loss(Model<Label>& model, const Data& data, const Label& label) {
     auto& res = model.PredictResult(data);
     double ret = 0;
     for(int i = 0; i < res.size(); i++) {
+        double er = (i == label ? 3 * (res[i] - 1) : res[i]);
+        ret += er * er;
+    }
+    return ret;
+}
+
+
+template<class Label>
+double Loss(const Layer& res, const Data& data, const Label& label) {
+    double ret = 0;
+    for(int i = 0; i < res.size(); i++) {
         double er = (i == label ? res[i] - 1 : res[i]);
         ret += er * er;
     }
     return ret;
 }
+
 
 #endif

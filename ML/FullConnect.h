@@ -2,6 +2,7 @@
 #include "util.h"
 #include <numeric>
 #include <math.h>
+//#include <algorithm.h>
 
 struct Linear {
     static double f(const vector<double>& W, const Layer& X) {
@@ -14,9 +15,9 @@ struct Linear {
         for(int i = 0; i < W.size(); i++) 
             W[i] -= alp * pre_dfdx * X[i];
     }
-    static void set_dfdx_to_L2(const vector<double>& W, const Layer& X) {
+    static void set_dfdx_to_L1(const vector<double>& W, Layer& X, const Layer& Xt, double pre_dfdx) {
         for(int i = 0; i < X.size(); i++)
-            X[i] += 0; 
+            X[i] += pre_dfdx * W[i]; 
     }
 };
 
@@ -26,21 +27,44 @@ struct Multipy {
     }
     static double f(const vector<double>& W, const Layer& X) {
         double ret = 1;
+        double balance = 2.0 / W.size();
+        
+        vector<double> LW = W;
+        for(auto &w: LW) {
+            assert(w < 1e9 and w > -1e9);
+            w = L(w) * balance;
+        }
+
         for(int i = 0; i < W.size(); i++)
-            ret *= pow(X[i], L(W[i]));
+            ret *= pow(X[i], LW[i]);
+        assert(ret < 1 - 1e-09 and ret > 1e-09);
         return ret;
     }
-    static double pre_dfdw(const vector<double>& W, const Layer& X) {
-        double delta = alpha;
+    static void set_dfdw_to_W(vector<double>& W, const Layer& X, double alp, double pre_dfdx) {
+        double delta = alp * pre_dfdx;
+        double balance = 2.0 / W.size();
+
+        vector<double> LW = W;
+        for(auto &w: LW)
+            w = L(w) * balance;
+
         for(int i = 0; i < W.size(); i++)
-            delta *= pow(X[i], L(W[i]));
-        return delta;
+            delta *= pow(X[i], LW[i]);
+        for(int i = 0; i < W.size(); i++) {
+            W[i] -= delta * balance * (1 - LW[i]) * LW[i] * log(X[i]);
+        }
     }
-    static double dfdw(const vector<double>& W, const Layer& X, int ind) {
-        double ret = 1;
-        return delta
+    static void set_dfdx_to_L1(const vector<double>& W, Layer& X, const Layer& Xt, double pre_dfdx) {
+        double delta = pre_dfdx;
+        double balance = 2.0 / W.size();
+
+        vector<double> LW = W;
+        for(auto &w: LW)
+            w = L(w) * balance;
+
+        for(int i = 0; i < W.size(); i++)
+            delta *= pow(Xt[i], LW[i]);
+        for(int i = 0; i < W.size(); i++)
+            X[i] += delta * LW[i] / Xt[i];
     }
-    static double dfdx(const vector<double>& W, const Layer& X, int ind) {
-        return W[ind];
-    }
-}
+};

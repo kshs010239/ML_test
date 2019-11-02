@@ -13,3 +13,12 @@ struct Sigmoid {
         return fx * (1 - fx);
     }
 };
+
+struct ReLU {
+    static double f(double x) {
+        return x > 0 ? x : 0;
+    }
+    static double dfdx(double x) {
+        return x > 0 ? 1 : 0;
+    }
+};
